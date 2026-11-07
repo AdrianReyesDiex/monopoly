@@ -1,0 +1,897 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Magnate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #163828; --bg2: #23543c; --felt: #f6faf1; --felt2: #d5e5cb; --brand: #1d5a3c; --brand2: #0f3a26;
+    --paper: #f6f1e3; --ink: #222; --line: #6d6450; --accent: #e8b23a; --display: Fredoka, system-ui, sans-serif; color-scheme: dark; }
+  /* Temas: cambian el fondo, el centro del tablero, el logo y el color de acento */
+  [data-theme="noche"] { --bg: #121a33; --bg2: #26386a; --felt: #f3f6fc; --felt2: #cfdaf0; --brand: #263f86; --brand2: #142352; --accent: #ffc857; }
+  [data-theme="vino"] { --bg: #2e0f1a; --bg2: #5c2136; --felt: #fcf3f3; --felt2: #efd2d6; --brand: #7a1f3d; --brand2: #4a1024; --accent: #f2b134; }
+  [data-theme="atardecer"] { --bg: #2b1640; --bg2: #5e2f63; --felt: #fff6ee; --felt2: #f6d8c4; --brand: #8e3b5b; --brand2: #5a2139; --accent: #ff9f43; }
+  [data-theme="oceano"] { --bg: #0d2f36; --bg2: #16606a; --felt: #f0fbfa; --felt2: #c8ebe7; --brand: #0f6b73; --brand2: #08444a; --accent: #ffd166; }
+  [data-theme="grafito"] { --bg: #1c1d21; --bg2: #383a42; --felt: #f5f5f3; --felt2: #dcdcd6; --brand: #3a3d46; --brand2: #1f2127; --accent: #e8b23a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font-family: system-ui, sans-serif; color: var(--paper);
+    background: var(--bg) radial-gradient(circle at 50% 25%, var(--bg2), var(--bg) 70%) fixed; transition: background-color .4s; }
+  button { font: inherit; cursor: pointer; }
+  h1 { margin: 0; letter-spacing: .15em; font: 700 2.6rem var(--display); }
+  h2 { margin: 0 0 8px; font-size: 1rem; display: flex; align-items: center; gap: .4em; }
+  ul, ol { margin: 0; padding: 0; list-style: none; }
+  .ic { width: 1.25em; height: 1.25em; flex: none; vertical-align: -.25em; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: .45em; background: var(--accent); color: #222; border: 0;
+    border-radius: 8px; padding: .6em 1em; font-weight: 600; box-shadow: 0 2px 0 rgba(0, 0, 0, .25); transition: transform .12s, box-shadow .12s, filter .12s; }
+  .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(0, 0, 0, .3); filter: brightness(1.06); }
+  .btn:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
+  .btn.alt { background: #d8d4c8; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn:focus-visible, .cell:focus-visible, .x:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  input { font: inherit; padding: .6em; border-radius: 8px; border: 1px solid #777; min-width: 0; }
+  #msg { color: #ffb4a8; min-height: 1.2em; margin: 0; }
+  .lobby { max-width: 380px; margin: 8vh auto; padding: 0 16px; display: grid; gap: 12px; text-align: center; animation: rise .45s ease-out; }
+  .lobby .dice { justify-content: center; font-size: 14px; animation: float 3s ease-in-out infinite; }
+  .lobby.wide { max-width: 580px; }
+  .step { display: grid; gap: 12px; animation: rise .35s ease-out; }
+  .step-title { justify-content: center; font: 600 1.35rem var(--display); }
+  .lobby label { display: grid; gap: 6px; text-align: left; font-size: .9rem; }
+  .code-input { text-transform: uppercase; letter-spacing: .4em; text-align: center; font: 700 1.6rem var(--display); }
+  .choices { display: grid; gap: 12px; }
+  .choice { display: grid; grid-template-columns: auto 1fr; column-gap: 14px; align-items: center; padding: 16px 18px; text-align: left; color: var(--paper);
+    background: rgba(0, 0, 0, .25); border: 2px solid rgba(255, 255, 255, .15); border-radius: 14px; transition: transform .15s, border-color .15s, background .15s; }
+  .choice .ic { grid-row: span 2; width: 2.3em; height: 2.3em; color: var(--accent); }
+  .choice b { font: 600 1.2rem var(--display); } .choice small { opacity: .75; }
+  .choice:hover, .choice:focus-visible { transform: translateY(-3px); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); outline: none; }
+  .chars { display: grid; grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); gap: 10px; }
+  .char { display: grid; justify-items: center; gap: 4px; padding: 12px 6px 10px; color: var(--paper); background: rgba(255, 255, 255, .04);
+    border: 2px solid rgba(255, 255, 255, .12); border-radius: 12px; transition: transform .15s, border-color .15s, background .15s; }
+  .char-icon { width: 3.3em; height: 3.3em; display: grid; place-items: center; border-radius: 50%; color: #fff; border: 3px solid #fff;
+    background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .55), transparent 50%), var(--c); box-shadow: 0 3px 8px rgba(0, 0, 0, .4); }
+  .char-icon .ic { width: 1.7em; height: 1.7em; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .5)); }
+  .char b { font: 600 .95rem var(--display); } .char small { font-size: .75rem; opacity: .7; }
+  .char:hover:not(:disabled), .char:focus-visible { transform: translateY(-3px); border-color: var(--c); outline: none; }
+  .char.mine { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, transparent); }
+  .char.mine .char-icon { animation: bounce 1.2s ease-in-out infinite; }
+  .char:disabled { opacity: .35; cursor: not-allowed; }
+  .host { font-size: .72rem; padding: .1em .5em; border-radius: 999px; background: color-mix(in srgb, var(--accent) 25%, transparent); color: var(--accent); }
+  .code { font: 700 3.2rem var(--display); letter-spacing: .3em; color: var(--accent); animation: pop .6s ease-out; }
+  .small { font-size: .85rem; opacity: .8; word-break: break-all; } a { color: var(--accent); }
+  .avatar { display: inline-grid; place-items: center; width: 1.7em; height: 1.7em; flex: none; vertical-align: middle; border-radius: 50%; color: #fff;
+    border: 2px solid #fff; background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .5), transparent 50%), var(--c); }
+  .avatar .ic { width: 1em; height: 1em; }
+  .players li { position: relative; padding: 4px 6px; border-radius: 6px; display: flex; gap: 6px; align-items: center; transition: background .3s; animation: rise .3s ease-out; }
+  .players li b { margin-left: auto; font-family: var(--display); }
+  .players .cur { background: color-mix(in srgb, var(--accent) 25%, transparent); }
+  .players .cur .avatar { animation: pulse 1.2s ease-in-out infinite; }
+  .players .out { opacity: .45; text-decoration: line-through; }
+  .delta { position: absolute; right: 6px; top: -6px; font-weight: 800; pointer-events: none; animation: delta 1.8s ease-out forwards; }
+  .delta.up { color: #7ee08a; } .delta.down { color: #ff8a80; }
+
+  /* ---------- Tablero ---------- */
+  /* Escritura a la izquierda, tablero al centro, dinero a la derecha; abajo queda libre para la mano de propiedades. */
+  .game { display: grid; grid-template: "left board right" / 300px auto 300px; gap: 16px; padding: 12px 12px 80px; justify-content: center; align-items: start; }
+  .col { display: grid; gap: 12px; align-content: start; min-width: 0; }
+  .left { grid-area: left; } .right { grid-area: right; }
+  .board { grid-area: board; justify-self: center; position: relative; width: min(calc(100vh - 100px), calc(100vw - 680px)); aspect-ratio: 1; display: grid; gap: 1px; background: var(--line);
+    grid-template: 1.6fr repeat(9, 1fr) 1.6fr / 1.6fr repeat(9, 1fr) 1.6fr; font-size: clamp(6px, 1.05vmin, 11px);
+    border: .7em solid #3b3326; border-radius: .7em; box-shadow: inset 0 0 0 1px #8a7b5a, 0 0 0 .25em #a8956a, 0 20px 50px rgba(0, 0, 0, .55); }
+  #cells { display: contents; }
+  .cell { position: relative; display: flex; padding: 0; border: 0; min-width: 0; overflow: hidden; color: var(--ink); line-height: 1.05;
+    text-align: center; background: linear-gradient(#fbf7ec, #f0e8d3); transition: transform .15s, box-shadow .15s; }
+  .cell:hover { transform: scale(1.07); z-index: 3; box-shadow: 0 .4em 1.2em rgba(0, 0, 0, .35); }
+  .s-b { flex-direction: column; } .s-t { flex-direction: column-reverse; } .s-l { flex-direction: row-reverse; } .s-r { flex-direction: row; }
+  .band { flex: none; display: flex; align-items: center; justify-content: center; gap: .05em; background: var(--g);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15); }
+  .s-b .band, .s-t .band { height: 1.8em; } .s-l .band, .s-r .band { width: 1.8em; flex-direction: column; }
+  .cell .band .ic { width: 1.15em; height: 1.15em; color: #fff; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .6)); }
+  .cell .band .ht { width: 1.6em; height: 1.6em; color: #ffebee; }
+  .info { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: .35em .15em; gap: .15em; }
+  .nm { font-weight: 600; overflow-wrap: anywhere; }
+  .pr { font: 600 1.05em var(--display); color: #3b3326; }
+  .cell .info > .ic { width: 2em; height: 2em; }
+  .t-card .ic { color: #8e24aa; } .t-transport .ic { color: #37474f; } .t-util .ic { color: #ef6c00; } .t-tax .ic { color: #795548; }
+  .owned.s-b { box-shadow: inset 0 -.6em 0 var(--own); } .owned.s-t { box-shadow: inset 0 .6em 0 var(--own); }
+  .owned.s-l { box-shadow: inset .6em 0 0 var(--own); } .owned.s-r { box-shadow: inset -.6em 0 0 var(--own); }
+  .mort .info, .mort .band { opacity: .4; }
+  .mort::after { content: 'HIPOTECADA'; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-35deg); padding: 0 .25em;
+    font: 700 .8em var(--display); letter-spacing: .05em; color: #b3261e; border: .15em solid #b3261e; border-radius: .2em; background: rgba(255, 255, 255, .85); }
+  .corner .info { justify-content: center; gap: .3em; }
+  .corner .nm { font: 700 1.25em var(--display); letter-spacing: .06em; text-transform: uppercase; }
+  .corner small { font-size: .9em; opacity: .75; }
+  .corner .info > .ic { width: 3.2em; height: 3.2em; }
+  .t-start { background: linear-gradient(#e8f5e3, #d3eacb); } .t-start .ic { color: #2e7d32; } .t-start .info > .arrow { width: 2.2em; height: 2.2em; }
+  .t-jail { background: repeating-linear-gradient(90deg, transparent 0 1em, rgba(69, 90, 100, .16) 1em 1.3em), linear-gradient(#f3ead8, #e5d8bc); }
+  .t-jail .ic { color: #455a64; }
+  .t-rest { background: linear-gradient(#e6f4f3, #cfe8e5); } .t-rest .ic { color: #00838f; }
+  .t-gojail { background: linear-gradient(#fdecea, #f6d2cd); } .t-gojail .ic { color: #c62828; }
+  .cell.sel { outline: .3em solid var(--accent); outline-offset: -.15em; z-index: 2; }
+  .cell.pop { animation: pop .7s ease-out; z-index: 2; }
+  .cell.buyable { animation: glow 1.1s ease-in-out infinite; z-index: 2; }
+
+  #layer { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+  .piece { position: absolute; width: 2.4em; height: 2.4em; font-size: 1.1em; transform: translate(-50%, -50%); border-radius: 50%; border: 2px solid #fff;
+    background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .6), transparent 45%), var(--c); box-shadow: 0 .2em .4em rgba(0, 0, 0, .55);
+    color: #fff; font-weight: 800; display: grid; place-items: center; text-shadow: 0 1px 1px #000; transition: left .16s ease-in-out, top .16s ease-in-out; }
+  .piece.out { display: none; }
+  .piece .ic { width: 62%; height: 62%; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .6)); }
+
+  .center { grid-area: 2 / 2 / 11 / 11; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; padding: 8px; color: var(--ink); text-align: center; overflow: auto; font-size: clamp(12px, 2vmin, 16px);
+    background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--brand) 4%, transparent) 0 2px, transparent 2px 14px),
+      radial-gradient(circle at 50% 42%, var(--felt), var(--felt2) 80%); }
+  .center::before { content: ''; position: absolute; inset: 1.1em; border: 2px dashed color-mix(in srgb, var(--brand) 25%, transparent); border-radius: 1em; pointer-events: none; }
+  .logo { font: 700 2.5em var(--display); letter-spacing: .12em; color: #fdf8ea; background: var(--brand); padding: .05em .7em; border-radius: .25em;
+    transform: rotate(-3deg); box-shadow: 0 .14em 0 var(--brand2), 0 .4em 1em rgba(0, 0, 0, .25); }
+  .tagline { margin: .2em 0; font-size: .75em; letter-spacing: .3em; text-transform: uppercase; color: var(--brand); opacity: .7; }
+  .deco { position: absolute; width: 5.6em; height: 7.6em; display: grid; place-content: center; justify-items: center; gap: .3em;
+    border-radius: .6em; font: 700 .8em var(--display); letter-spacing: .1em; pointer-events: none; }
+  .deco .ic { width: 2.4em; height: 2.4em; }
+  .deck { left: 8%; top: 9%; transform: rotate(-12deg); color: #8e24aa; background: linear-gradient(160deg, #fff8e1, #ffe082); border: 2px solid #8e24aa;
+    box-shadow: 3px 3px 0 #f3d36b, 6px 6px 0 #e9c24a, 8px 10px 16px rgba(0, 0, 0, .25); }
+  .bank { right: 8%; bottom: 9%; transform: rotate(10deg); color: #1d5a3c; background: linear-gradient(160deg, #e8f5e9, #a5d6a7); border: 2px solid #1d5a3c;
+    box-shadow: 3px 3px 0 #8cc98f, 6px 6px 0 #74b878, 8px 10px 16px rgba(0, 0, 0, .25); }
+  .center #msg { color: #b3261e; }
+  /* Dados 3D: cubos CSS con sus 6 caras */
+  .dice { display: flex; gap: 1.1em; padding: .4em 0 .6em; }
+  .die3d { position: relative; width: 3em; height: 3em; perspective: 22em; }
+  .die3d .shadow { position: absolute; left: 8%; right: 8%; bottom: -.75em; height: .65em; border-radius: 50%; background: rgba(0, 0, 0, .35); filter: blur(3px); }
+  .cube { position: absolute; inset: 0; transform-style: preserve-3d; }
+  .face { position: absolute; inset: 0; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); gap: .12em; padding: .45em; border-radius: .4em;
+    background: radial-gradient(circle at 35% 30%, #fff, #e6e6e6 85%); box-shadow: inset 0 0 .35em rgba(0, 0, 0, .2); }
+  .face i { border-radius: 50%; } .face i.on { background: radial-gradient(circle at 40% 35%, #555, #0d0d0d 70%); }
+  .lobby .cube { animation: idle 9s linear infinite; } .lobby .die3d + .die3d .cube { animation-duration: 11s; animation-direction: reverse; }
+  @keyframes idle { from { transform: rotateX(-25deg) rotateY(0) rotateZ(0); } to { transform: rotateX(-25deg) rotateY(360deg) rotateZ(360deg); } }
+  .actions { position: relative; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+  .center .log { position: relative; font-size: .85em; opacity: .75; }
+  .later { animation: fadein .35s both; }
+  .trophy { color: #c99a1e; animation: bounce 1s ease-in-out infinite; } .trophy .ic { width: 3.5em; height: 3.5em; }
+
+  /* ---------- Panel lateral y escritura ---------- */
+  .panel { background: rgba(0, 0, 0, .25); border-radius: 10px; padding: 12px; }
+  .panel .log { max-height: 30vh; overflow: auto; font-size: .9rem; }
+  .panel .log li { padding: 2px 0; border-bottom: 1px solid rgba(255, 255, 255, .08); }
+  .panel .log li:first-child { animation: fadein .5s; }
+  .placeholder { display: grid; justify-items: center; gap: 8px; padding: 28px 16px; text-align: center; opacity: .8;
+    border: 2px dashed rgba(255, 255, 255, .25); border-radius: 12px; }
+  .placeholder .ic { width: 2.4em; height: 2.4em; } .placeholder p { margin: 0; }
+
+  /* ---------- Mano de propiedades (enfundada en el borde inferior) ---------- */
+  .hand { --w: 120px; --h: 168px; --peek: 66px; position: fixed; left: 50%; bottom: 0; z-index: 15; display: flex; align-items: flex-end;
+    transform: translateX(-50%); pointer-events: none; }
+  .hand-card { position: relative; flex: none; width: var(--w); height: var(--h); margin: 0 var(--m); padding: 6px; border: 0; text-align: left;
+    pointer-events: auto; color: #222; background: #fffdf6; border-radius: 10px; box-shadow: 0 -4px 14px rgba(0, 0, 0, .35); transform-origin: 50% 100%;
+    transform: translateY(calc(var(--h) - var(--peek) + var(--drop))) rotate(var(--rot)); transition: transform .25s cubic-bezier(.2, .8, .3, 1.15), box-shadow .25s; }
+  .hand-card:hover, .hand-card:focus-visible { z-index: 2; transform: translateY(6px) scale(1.08); box-shadow: 0 -10px 30px rgba(0, 0, 0, .55); outline: none; }
+  .hand-card.sel { z-index: 1; transform: translateY(calc((var(--h) - var(--peek)) * .55)); box-shadow: 0 0 0 3px var(--accent), 0 -6px 18px rgba(0, 0, 0, .45); }
+  .hand-card.sel:hover { transform: translateY(6px) scale(1.08); }
+  .hand-card.new { animation: dealin .55s ease-out var(--delay) both; }
+  .hand-card header { height: 44px; display: grid; place-items: center; padding: 2px 4px; text-align: center; border: 2px solid #222; border-radius: 6px;
+    font: 700 .72rem/1.05 var(--display); text-transform: uppercase; }
+  .hand-card header.plain { grid-template-columns: auto 1fr; gap: 3px; background: #f3eedf; } .hand-card header .ic { width: 1.5em; height: 1.5em; }
+  .hand-card .body { display: grid; gap: 4px; padding: 7px 2px 0; font-size: .75rem; }
+  .hand-card .full { color: #b8860b; }
+  .hand-card .houses-row { display: flex; gap: 1px; min-height: 1.2em; color: #2e7d32; } .hand-card .houses-row .ic { width: 1.15em; height: 1.15em; }
+  .hand-card .price { position: absolute; right: 8px; bottom: 6px; font: 600 .95rem var(--display); color: #3b3326; }
+  .hand-card.mortgaged::after { content: 'HIPOTECADA'; position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%) rotate(-20deg); padding: 0 .3em;
+    font: 700 .8rem var(--display); color: #b3261e; border: 2px solid currentColor; border-radius: 4px; background: rgba(255, 253, 246, .85); }
+  .hand-empty { margin: 0 0 14px; padding: .45em 1.1em; display: flex; gap: .4em; align-items: center; font-size: .85rem; opacity: .85;
+    background: rgba(0, 0, 0, .35); border-radius: 999px; }
+  @keyframes dealin { from { opacity: 0; transform: translateY(calc(var(--h) + 40px)) rotate(var(--rot)); } }
+  .deed { position: relative; padding: 10px; color: #222; background: #fffdf6; border: 1px solid #d9cfb4; border-radius: 12px; box-shadow: 0 12px 30px rgba(0, 0, 0, .4); }
+  .deed.deal { animation: deal .45s ease-out; }
+  .deed header { text-align: center; padding: .6em 2.2em; border: 2px solid #222; border-radius: 8px; }
+  .deed header small { display: block; font-size: .7rem; letter-spacing: .3em; text-transform: uppercase; opacity: .85; }
+  .deed header.plain { background: #f3eedf; } .deed header .ic { display: block; width: 2.8em; height: 2.8em; margin: 0 auto .2em; }
+  .deed h3 { margin: .1em 0 0; font: 700 1.35rem/1.1 var(--display); letter-spacing: .04em; text-transform: uppercase; }
+  .rents { margin: .6em 0; font-size: .95rem; }
+  .rents li { display: flex; align-items: center; gap: .4em; padding: .25em .5em; border-radius: 6px; }
+  .rents li span { display: inline-flex; align-items: center; gap: .1em; }
+  .rents .ic { width: 1.1em; height: 1.1em; color: #2e7d32; } .rents .ht .ic { color: #c62828; }
+  .rents .lead { flex: 1; border-bottom: 2px dotted #c9bfa6; transform: translateY(-.25em); }
+  .rents b { font-family: var(--display); font-weight: 600; }
+  .rents li.now { background: #fff1bf; font-weight: 700; box-shadow: inset 3px 0 0 var(--accent); }
+  .deed dl { display: grid; grid-template-columns: 1fr auto; gap: .2em .5em; margin: .4em 0 0; padding: .5em .5em 0; border-top: 1px solid #e3d9bf; font-size: .9rem; }
+  .deed dt { opacity: .75; } .deed dd { margin: 0; font-weight: 700; text-align: right; }
+  .deed .desc { margin: .9em .4em; text-align: center; }
+  .deed footer { display: flex; flex-wrap: wrap; gap: .4em; justify-content: center; margin-top: .7em; }
+  .chip { display: inline-flex; align-items: center; gap: .35em; padding: .25em .7em; border-radius: 999px; background: #efe8d6; font-size: .85rem; }
+  .chip.free { background: #e1f3e0; color: #1b5e20; }
+  .x { position: absolute; top: 4px; right: 4px; z-index: 1; width: 2.2em; height: 2.2em; display: grid; place-items: center; border: 0; border-radius: 50%;
+    background: rgba(255, 255, 255, .9); color: #222; box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
+  .deed.mortgaged::after { content: 'HIPOTECADA'; position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%) rotate(-18deg); padding: .1em .4em;
+    font: 700 1.6rem var(--display); letter-spacing: .08em; color: rgba(179, 38, 30, .85); border: 3px solid currentColor; border-radius: 6px; pointer-events: none; }
+  .detail .actions { margin-top: 10px; }
+
+  /* ---------- Cartera ---------- */
+  .wallet h2 b { margin-left: auto; font: 600 1.1rem var(--display); color: var(--accent); }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tile { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 60px; padding: 8px 10px; color: var(--paper);
+    background: rgba(255, 255, 255, .05); border: 2px solid rgba(255, 255, 255, .1); border-radius: 10px; transition: border-color .15s, background .15s, transform .15s; }
+  .tile:hover:not(:disabled) { transform: translateY(-2px); border-color: rgba(255, 255, 255, .35); }
+  .tile.picked { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+  .tile:disabled { opacity: .35; cursor: default; }
+  .tile .stack { width: calc(6em + 9px); }
+  .tile .count { font: 600 1.15rem var(--display); }
+  .tile.pop .stack { animation: pop .5s ease-out var(--delay, 0s); }
+  .paying .tile:not(:disabled) { cursor: grab; touch-action: none; }
+  .stack { position: relative; height: calc(2.9em + 9px); font-size: .8em; }
+  .bill { position: absolute; left: 0; bottom: 0; width: 6em; height: 2.9em; display: flex; justify-content: space-between; padding: .25em .4em;
+    border-radius: .3em; color: #263238; font: 700 1em/1 var(--display); transform: translate(calc(var(--i) * 3px), calc(var(--i) * -3px));
+    background: repeating-linear-gradient(45deg, rgba(255, 255, 255, .2) 0 2px, transparent 2px 6px), var(--bc);
+    box-shadow: inset 0 0 0 .18em rgba(255, 255, 255, .55), inset 0 0 0 .26em rgba(0, 0, 0, .15), 0 1px 2px rgba(0, 0, 0, .4); }
+  .bill b:last-child { align-self: flex-end; }
+  .bill i { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 1.5em; height: 1.5em; display: grid; place-items: center;
+    font-style: normal; font-size: .8em; border-radius: 50%; background: rgba(255, 255, 255, .6); border: 1px solid rgba(0, 0, 0, .25); }
+  .ex-bar { display: grid; gap: 8px; margin-top: 10px; }
+  .ex-btn { justify-content: flex-start; min-height: 50px; padding: .6em .9em; text-align: left; font-size: .95rem; }
+  .ex-btn .ic { width: 1.6em; height: 1.6em; } .ex-btn small { display: block; font-size: .82rem; font-weight: 500; opacity: .8; }
+  .wallet > .ex-btn { width: 100%; margin-top: 8px; }
+  .ex-hint { display: flex; gap: .4em; align-items: center; margin: 10px 0 0; font-size: .88rem; opacity: .75; }
+
+  /* Caja de pago: se llena arrastrando o tocando billetes */
+  .tray { display: grid; gap: 8px; margin-bottom: 12px; padding: 10px; border: 2px solid var(--accent); border-radius: 12px;
+    background: color-mix(in srgb, var(--accent) 12%, transparent); animation: rise .3s ease-out; }
+  .tray-head { display: flex; gap: 10px; align-items: center; } .tray-head .ic { width: 1.9em; height: 1.9em; color: var(--accent); }
+  .tray-head b { display: block; font: 600 1.2rem var(--display); } .tray-head small { opacity: .8; }
+  .tray-zone { min-height: 70px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; padding: 8px; text-align: center;
+    font-size: .88rem; border: 2px dashed rgba(255, 255, 255, .4); border-radius: 10px; transition: background .15s, border-color .15s; }
+  .tray-zone.over { background: rgba(255, 255, 255, .14); border-color: #fff; }
+  .tray-zone.ok { border-style: solid; border-color: #7ee08a; }
+  .tray-bill { display: flex; align-items: center; gap: 4px; padding: 2px; border: 0; background: none; color: var(--paper); font: 600 .9rem var(--display); animation: pop .3s ease-out; }
+  .tray-bill .bill, .ghost .bill { position: static; transform: none; }
+  .tray-bill .bill { font-size: 9px; }
+  .tray-sum { text-align: center; font-size: .92rem; }
+  .tray-actions { display: flex; gap: 8px; } .tray-actions .btn { flex: 1; min-height: 46px; }
+  .ghost { position: fixed; z-index: 60; pointer-events: none; font-size: 12px; transform: translate(-50%, -50%) rotate(-6deg); filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45)); }
+
+  /* Selector de tema */
+  .themes { position: fixed; left: 10px; bottom: 10px; z-index: 25; display: flex; gap: 6px; padding: 6px 8px; border-radius: 999px; background: rgba(0, 0, 0, .35); }
+  .swatch { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .6); background: var(--sw); transition: transform .15s; }
+  .swatch:hover { transform: scale(1.2); } .swatch.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+
+  .card-pop { position: absolute; left: 50%; top: 50%; z-index: 5; width: min(70%, 260px); padding: 16px; text-align: center; cursor: pointer;
+    transform: translate(-50%, -50%); background: linear-gradient(160deg, #fff8e1, #ffe082); color: #3e2723; border: 3px solid #8e24aa;
+    border-radius: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, .45); font-size: clamp(13px, 2vmin, 17px); animation: flip .55s ease-out; }
+  .card-pop .ic { display: block; width: 2.4em; height: 2.4em; margin: 0 auto 6px; color: #8e24aa; }
+  .card-pop b { font-family: var(--display); letter-spacing: .1em; }
+  .card-pop p { margin: 8px 0 0; }
+  .toast { position: fixed; left: 50%; top: 18px; z-index: 30; display: flex; gap: .5em; align-items: center; padding: .7em 1.4em;
+    background: var(--accent); color: #222; font-weight: 800; border-radius: 999px; box-shadow: 0 6px 20px rgba(0, 0, 0, .4);
+    animation: toast 2.4s ease-in-out forwards; }
+
+  @media (max-width: 1199px) {
+    .game { grid-template: "board board" "left right" / minmax(0, 360px) minmax(0, 360px); }
+    .board { width: min(calc(100vw - 24px), calc(100vh - 100px)); }
+  }
+  @media (max-width: 760px) {
+    .game { grid-template: "board" "left" "right" / minmax(0, 1fr); }
+    .hand { --w: 96px; --h: 134px; --peek: 54px; }
+    .detail.open { position: fixed; inset: auto 0 0 0; z-index: 20; max-height: 88vh; overflow: auto; padding: 16px;
+      border-radius: 16px 16px 0 0; background: color-mix(in srgb, var(--bg) 96%, transparent); box-shadow: 0 -10px 30px rgba(0, 0, 0, .5); }
+    .detail.open.fresh { animation: sheet .3s ease-out; }
+    .deco { display: none; }
+  }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+  @keyframes fadein { from { opacity: 0; transform: translateY(-4px); } }
+  @keyframes float { 50% { transform: translateY(-6px) rotate(-3deg); } }
+  @keyframes pulse { 50% { transform: scale(1.35); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 45%, transparent); } }
+  @keyframes pop { 40% { transform: scale(1.2); filter: brightness(1.12); } }
+  @keyframes glow { 50% { box-shadow: 0 0 0 .25em var(--accent), 0 0 1.4em var(--accent); } }
+  @keyframes bounce { 50% { transform: translateY(-8px); } }
+  @keyframes delta { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-26px); } }
+  @keyframes flip { from { opacity: 0; transform: translate(-50%, -50%) perspective(600px) rotateY(90deg) scale(.6); } }
+  @keyframes deal { from { opacity: 0; transform: perspective(900px) rotateY(-70deg) translateX(-30px); } }
+  @keyframes sheet { from { transform: translateY(100%); } }
+  @keyframes toast { 0%, 100% { opacity: 0; transform: translate(-50%, -30px); } 12%, 85% { opacity: 1; transform: translate(-50%, 0); } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="themes" role="group" aria-label="Tema de colores"></div>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="game.js"></script>
+<script src="wallet.js"></script>
+<script src="net.js"></script>
+<script>
+const $app = document.getElementById('app');
+const PIPS = { 1: [4], 2: [2, 6], 3: [2, 4, 6], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+const ROLL_MS = 1150; // duración de la animación de los dados
+const SIDES = ['b', 'l', 't', 'r']; // lado del tablero de cada tramo de 10 casillas
+const CORNER_SUB = { start: 'Cobra $200 al pasar', jail: 'Solo de visita', rest: 'Zona libre', gojail: '¡Directo!' };
+const BILL_COLORS = { 500: '#ffd54f', 100: '#ffab91', 50: '#ce93d8', 20: '#90caf9', 10: '#c5e1a5', 5: '#80cbc4', 1: '#cfd8dc' };
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let me = JSON.parse(sessionStorage.getItem('magnate') || 'null'); // { token, id, code, host } de este jugador
+let state = null, sel = null, dealt = null, msg = '', wait = 0; // wait: ms hasta que termina la animación de la tirada
+let prevW = null, prevHand = null; // cartera y propiedades del render anterior, para animar lo que cambia
+let tray = {}, trayKey = '', pending = null, picked = null; // billetes en la caja de pago, compra por pagar, billete elegido para cambiar
+let step = new URLSearchParams(location.search).get('sala') ? 'join' : 'menu'; // paso del menú inicial; con enlace de invitación va directo a unirse
+
+const esc = s => String(s).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
+const val = id => document.getElementById(id)?.value || '';
+const player = id => state.players.find(p => p.id === id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+// Texto oscuro sobre colores claros, blanco sobre oscuros.
+const inkOn = hex => [0, 1, 2].reduce((s, k) => s + parseInt(hex.substr(1 + k * 2, 2), 16) * [.299, .587, .114][k], 0) > 150 ? '#222' : '#fff';
+
+const icons = {};
+function icon(name, cls = '') {
+  const key = name + cls;
+  if (!(key in icons)) {
+    const node = window.lucide?.icons?.[name], svg = node && lucide.createElement(node);
+    svg?.setAttribute('class', ('ic ' + cls).trim());
+    svg?.setAttribute('aria-hidden', 'true');
+    icons[key] = svg ? svg.outerHTML : ''; // sin internet no hay iconos, pero el juego sigue
+  }
+  return icons[key];
+}
+
+// Dado 3D. Caras opuestas suman 7: frente 1, atrás 6, derecha 3, izquierda 4, arriba 2, abajo 5.
+const CUBE_FACES = [[1, 'rotateY(0deg)'], [6, 'rotateY(180deg)'], [3, 'rotateY(90deg)'], [4, 'rotateY(-90deg)'], [2, 'rotateX(90deg)'], [5, 'rotateX(-90deg)']];
+const SHOW = { 1: [0, 0], 2: [-90, 0], 3: [0, -90], 4: [0, 90], 5: [90, 0], 6: [0, 180] }; // giro que deja la cara n al frente
+// Misma lista de funciones siempre, para que la animación interpole vuelta por vuelta en vez de tomar el camino corto.
+const cubeAt = (n, k, spin = [0, 0, 0]) => `rotateX(-20deg) rotateY(${k ? -25 : 25}deg) rotateX(${spin[0]}deg) rotateY(${spin[1]}deg) rotateZ(${spin[2]}deg) rotateX(${SHOW[n][0]}deg) rotateY(${SHOW[n][1]}deg)`;
+const pips = n => [...Array(9)].map((_, k) => `<i${PIPS[n].includes(k) ? ' class="on"' : ''}></i>`).join('');
+const die = (n, k = 0) => `<div class="die3d"><div class="shadow"></div><div class="cube" style="transform:${cubeAt(n, k)}">${
+  CUBE_FACES.map(([f, r]) => `<div class="face" style="transform:${r} translateZ(1.5em)">${pips(f)}</div>`).join('')}</div></div>`;
+
+function showMsg(text) {
+  msg = text;
+  const el = document.getElementById('msg');
+  if (el) el.textContent = text;
+}
+
+Net.on({
+  // Nuevo estado de la sala (viene del anfitrión, o lo calcula este navegador si es el anfitrión).
+  state(s) {
+    const old = state;
+    state = s;
+    pending = null; // una compra a medio pagar se cancela si cambia el juego (o ya se hizo)
+    if (!me) return; // aún esperando la respuesta de "unirse"
+    const rolled = !calm && old?.started && state.rolls !== old.rolls;
+    wait = rolled ? ROLL_MS + 200 + 180 * (state.dice[0] + state.dice[1]) : 0;
+    render();
+    if (state.started) effects(old, rolled);
+    wait = 0;
+  },
+  lost() { leave(); showMsg('Se perdió la conexión con la sala (¿el anfitrión la cerró?)'); },
+  status: showMsg,
+});
+
+function leave() {
+  Net.close();
+  sessionStorage.removeItem('magnate');
+  me = state = sel = prevW = prevHand = pending = picked = null;
+  tray = {};
+  step = 'menu';
+  render();
+}
+
+// La cartera vive en esta pestaña; las reglas solo conocen el total.
+const walletKey = () => `magnate-wallet-${state.code}-${me.id}`;
+function saveWallet(w) {
+  try { sessionStorage.setItem(walletKey(), JSON.stringify(w)); } catch {}
+  return w;
+}
+function myWallet() {
+  let w = null;
+  try { w = JSON.parse(sessionStorage.getItem(walletKey())); } catch {}
+  return saveWallet(Wallet.sync(w, player(me.id).money));
+}
+
+async function api(body) {
+  const entering = body.type === 'create' || body.type === 'join';
+  if (entering) showMsg('Conectando…');
+  const j = body.type === 'create' ? await Net.create(body.name)
+    : body.type === 'join' ? await Net.join(body.code, body.name)
+    : await Net.send({ ...body, token: me.token });
+  showMsg(j.error || '');
+  if (entering && j.token) {
+    me = { token: j.token, id: j.id, code: j.code, host: !!j.host };
+    sessionStorage.setItem('magnate', JSON.stringify(me));
+    render();
+  }
+  return j;
+}
+
+// Lo que se compra con un botón se paga primero con billetes; la acción va al anfitrión al presionar "Pagar".
+const COSTS = {
+  buy: () => { const sp = Game.BOARD[player(me.id).pos]; return [sp.price, 'comprar ' + sp.name]; },
+  build: () => [Game.houseCost(sel), 'construir en ' + Game.BOARD[sel].name],
+  unmortgage: () => [Math.ceil(Game.BOARD[sel].price * 0.55), 'levantar la hipoteca de ' + Game.BOARD[sel].name],
+  bail: () => [Game.BAIL, 'fianza para salir de la cárcel'],
+};
+
+document.addEventListener('click', e => {
+  if (dragged) return; // el click que sigue a soltar un billete arrastrado no cuenta
+  const b = e.target.closest('[data-act],[data-cell],[data-ex],[data-tile],[data-untray],[data-pay],[data-theme-set]');
+  if (!b || b.disabled) return;
+  if (b.dataset.themeSet) return setTheme(b.dataset.themeSet, true);
+  if (b.dataset.cell) { sel = +b.dataset.cell; return render(); }
+  if (b.dataset.ex) { saveWallet(Wallet.exchange(myWallet(), b.dataset.ex, +b.dataset.d)); return render(); }
+  if (b.dataset.tile) {
+    const d = +b.dataset.tile;
+    if (payment()) return addToTray(d);
+    picked = picked === d ? null : d;
+    return render();
+  }
+  if (b.dataset.untray) { tray[b.dataset.untray]--; return render(); }
+  if (b.dataset.pay === 'go') return submitPayment();
+  if (b.dataset.pay === 'cancel') { pending = null; return render(); }
+  const type = b.dataset.act;
+  if (COSTS[type]) {
+    const [amount, why] = COSTS[type]();
+    pending = { key: type + sel + amount, act: type, i: sel, amount, to: null, why };
+    picked = null;
+    return render();
+  }
+  if (type === 'close') { sel = null; return render(); }
+  if (type === 'goto') { step = b.dataset.step; msg = ''; return render(); }
+  if (type === 'leave') return leave();
+  if (type === 'create' || type === 'join') return api({ type, name: val('name'), code: val('code') });
+  api({ type, i: b.dataset.i ? +b.dataset.i : sel });
+});
+// Arrastrar billetes de la cartera a la caja de pago (mouse y touch).
+let drag = null, dragged = false;
+document.addEventListener('pointerdown', e => {
+  const t = e.target.closest('[data-tile]');
+  if (t && !t.disabled && state?.started && payment()) drag = { d: +t.dataset.tile, x: e.clientX, y: e.clientY, ghost: null };
+});
+document.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (!drag.ghost) {
+    if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return; // aún es un toque, no un arrastre
+    drag.ghost = Object.assign(document.createElement('div'), { className: 'ghost', innerHTML: bill(drag.d, 0) });
+    document.body.append(drag.ghost);
+  }
+  Object.assign(drag.ghost.style, { left: e.clientX + 'px', top: e.clientY + 'px' });
+  document.querySelector('.tray-zone')?.classList.toggle('over', !!document.elementFromPoint(e.clientX, e.clientY)?.closest('.tray-zone'));
+});
+document.addEventListener('pointerup', e => {
+  if (!drag) return;
+  if (drag.ghost) {
+    drag.ghost.remove();
+    dragged = true;
+    setTimeout(() => { dragged = false; });
+    if (document.elementFromPoint(e.clientX, e.clientY)?.closest('.tray-zone')) addToTray(drag.d);
+    else document.querySelector('.tray-zone')?.classList.remove('over');
+  }
+  drag = null;
+});
+document.addEventListener('pointercancel', () => { drag?.ghost?.remove(); drag = null; });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && sel !== null && state?.started) { sel = null; render(); }
+  if (e.key === 'Enter' && e.target.matches('.lobby input')) document.querySelector('.lobby [data-act=create], .lobby [data-act=join]')?.click();
+});
+
+// Ficha redonda con el icono del personaje del jugador.
+const avatar = p => `<span class="avatar" style="--c:${p.color}" title="${esc(p.name)}">${icon(Game.CHARACTERS[p.char]?.icon ?? '')}</span>`;
+
+// Casilla i -> [fila, columna] en la grilla 11×11, empezando abajo a la derecha y girando a la izquierda.
+function cellPos(i) {
+  if (i <= 10) return [11, 11 - i];
+  if (i <= 20) return [21 - i, 1];
+  if (i <= 30) return [1, i - 19];
+  return [i - 29, 11];
+}
+
+// ---------- Animaciones ----------
+
+// Centro de la fila/columna n en % del tablero (esquinas de 1.6fr, el resto de 1fr).
+const track = n => (n === 1 ? .8 : n === 11 ? 11.4 : n + .1) / 12.2 * 100;
+
+function place(t, i, k) {
+  const [r, c] = cellPos(i), corner = i % 10 === 0; // en las esquinas van en fila abajo, para no tapar el nombre
+  t.style.left = `calc(${track(c)}% + ${corner ? (k - (state.players.length - 1) / 2) * 2 : (k % 3 - 1) * 1.4}em)`;
+  t.style.top = `calc(${track(r)}% + ${corner ? 3.4 : k < 3 ? .6 : 2.2}em)`;
+}
+
+function moveTokens() {
+  const layer = document.getElementById('layer');
+  if (!layer) return;
+  state.players.forEach((p, k) => {
+    let t = layer.querySelector(`[data-p="${p.id}"]`);
+    if (!t) {
+      t = Object.assign(document.createElement('div'), { className: 'piece', title: p.name, innerHTML: icon(Game.CHARACTERS[p.char]?.icon ?? '') || esc(p.name[0].toUpperCase()) });
+      Object.assign(t.dataset, { p: p.id, pos: p.pos });
+      t.style.setProperty('--c', p.color);
+      layer.append(t);
+      place(t, p.pos, k);
+    }
+    t.classList.toggle('out', p.out);
+    t.dataset.to = p.pos;
+    walk(t, k);
+  });
+}
+
+// Avanza la ficha casilla por casilla; los saltos largos (cárcel, cartas) van directo.
+async function walk(t, k) {
+  if (t.walking) return;
+  t.walking = true;
+  while (t.dataset.pos !== t.dataset.to) {
+    const from = +t.dataset.pos, to = +t.dataset.to, step = !calm && (to - from + 40) % 40 <= 12;
+    t.dataset.pos = step ? (from + 1) % 40 : to;
+    t.style.transitionDuration = step ? '.16s' : '.6s';
+    place(t, +t.dataset.pos, k);
+    if (!calm) t.animate([{ marginTop: '0' }, { marginTop: step ? '-1em' : '-3em' }, { marginTop: '0' }], step ? 170 : 600);
+    await sleep(step ? 180 : 650);
+  }
+  t.walking = false;
+}
+
+// Tirada: el dado salta, gira varias vueltas en los 3 ejes, rebota y cae en el número que salió.
+function tumble() {
+  document.querySelectorAll('.center .die3d').forEach((d, k) => {
+    const turns = base => (base + Math.floor(Math.random() * 4) * 90) * (Math.random() < .5 ? -1 : 1);
+    const opts = { duration: ROLL_MS, delay: k * 90, easing: 'cubic-bezier(.25, .7, .35, 1)', fill: 'backwards' };
+    d.querySelector('.cube').animate([{ transform: cubeAt(state.dice[k], k, [turns(720), turns(540), turns(360)]) }, { transform: cubeAt(state.dice[k], k) }], opts);
+    d.animate([
+      { transform: 'translate(0, 0)' }, { transform: `translate(${k ? 12 : -12}px, -3.4em)`, offset: .3 },
+      { transform: 'translate(0, 0)', offset: .58 }, { transform: 'translate(0, -.8em)', offset: .76 }, { transform: 'translate(0, 0)' },
+    ], { ...opts, easing: 'ease-in-out' });
+    d.querySelector('.shadow').animate([
+      { transform: 'scale(1)', opacity: .9 }, { transform: 'scale(.45)', opacity: .3, offset: .3 },
+      { transform: 'scale(1)', opacity: .9, offset: .58 }, { transform: 'scale(.8)', offset: .76 }, { transform: 'scale(1)', opacity: .9 },
+    ], { ...opts, easing: 'ease-in-out' });
+  });
+}
+
+function toast(html) {
+  const el = Object.assign(document.createElement('div'), { className: 'toast', innerHTML: html });
+  el.setAttribute('role', 'status');
+  document.body.append(el);
+  setTimeout(() => el.remove(), 2400);
+}
+
+// Temas de color: preferencia de cada quien, guardada en su navegador.
+const THEMES = { bosque: ['Bosque', '#23543c'], noche: ['Noche', '#26386a'], vino: ['Vino', '#5c2136'],
+  atardecer: ['Atardecer', '#5e2f63'], oceano: ['Océano', '#16606a'], grafito: ['Grafito', '#383a42'] };
+function setTheme(t, announce) {
+  if (!THEMES[t]) t = 'bosque';
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('magnate-theme', t); } catch {}
+  document.querySelector('.themes').innerHTML = Object.entries(THEMES).map(([k, [name, c]]) =>
+    `<button class="swatch${k === t ? ' on' : ''}" data-theme-set="${k}" style="--sw:${c}" title="${name}" aria-label="Tema ${name}" aria-pressed="${k === t}"></button>`).join('');
+  if (announce) toast(icon('Palette') + 'Tema: ' + THEMES[t][0]);
+}
+
+function showCard(text) {
+  document.querySelector('.card-pop')?.remove();
+  const el = Object.assign(document.createElement('div'), { className: 'card-pop', innerHTML: `${icon('Gift')}<b>SORPRESA</b><p>${esc(text)}</p>` });
+  el.setAttribute('role', 'status');
+  el.onclick = () => el.remove();
+  document.querySelector('.board')?.append(el);
+  setTimeout(() => el.remove(), 3800);
+}
+
+// Compara el estado anterior con el nuevo y anima lo que cambió.
+function effects(old, rolled) {
+  if (rolled) tumble();
+  setTimeout(moveTokens, rolled ? ROLL_MS : 0);
+  const myTurn = !state.winner && state.players[state.turn].id === me.id;
+  if (myTurn && !(old?.started && old.players[old.turn].id === me.id)) setTimeout(() => toast(icon('Dices') + '¡Tu turno!'), wait);
+  if (state.winner && !old?.winner) setTimeout(() => toast(icon('Trophy') + `¡${esc(player(state.winner).name)} gana!`), wait);
+  if (!old?.started) return;
+  const card = state.log.slice(0, Math.max(0, state.seq - old.seq)).find(l => l.startsWith('Sorpresa: '));
+  setTimeout(() => {
+    if (card) showCard(card.slice(10));
+    for (const p of state.players) {
+      const d = p.money - (old.players.find(x => x.id === p.id)?.money ?? p.money);
+      if (d && !p.out) document.querySelector(`[data-pid="${p.id}"]`)
+        ?.insertAdjacentHTML('beforeend', `<span class="delta ${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : '−'}$${Math.abs(d)}</span>`);
+    }
+    for (let i = 0; i < 40; i++) {
+      if (JSON.stringify(state.owned[i]) !== JSON.stringify(old.owned[i])) document.querySelector(`[data-cell="${i}"]`)?.classList.add('pop');
+    }
+  }, wait);
+}
+
+// ---------- Pantallas ----------
+
+function render() {
+  if (!me) return renderLobby();
+  if (!state) return void ($app.innerHTML = '<p class="lobby">Conectando…</p>');
+  if (!state.started) return renderWaiting();
+  renderGame();
+}
+
+// Menú inicial en pasos: elegir crear o unirse, y luego pedir solo lo necesario.
+function renderLobby() {
+  const code = new URLSearchParams(location.search).get('sala') || '';
+  const name = '<input id="name" maxlength="16" placeholder="Tu nombre" autocomplete="nickname">';
+  const back = `<button class="btn alt" data-act="goto" data-step="menu">${icon('ArrowLeft')}Volver</button>`;
+  const screens = {
+    menu: `<p>¿Qué quieres hacer?</p>
+      <div class="choices">
+        <button class="choice" data-act="goto" data-step="create">${icon('Sparkles')}<b>Crear una sala</b><small>Invita a tus amigos con un código</small></button>
+        <button class="choice" data-act="goto" data-step="join">${icon('DoorOpen')}<b>Unirme a una sala</b><small>Tengo el código de un amigo</small></button>
+      </div>`,
+    create: `<h2 class="step-title">${icon('Sparkles')}Crear una sala</h2>
+      <label>¿Con qué nombre te registras?${name}</label>
+      <button class="btn" data-act="create">${icon('Check')}Crear sala</button>${back}`,
+    join: `<h2 class="step-title">${icon('DoorOpen')}Unirme a una sala</h2>
+      <label>Código de la sala<input id="code" class="code-input" maxlength="4" placeholder="ABCD" autocomplete="off" value="${esc(code)}"></label>
+      <label>¿Con qué nombre juegas?${name}</label>
+      <button class="btn" data-act="join">${icon('LogIn')}Entrar</button>${back}`,
+  };
+  $app.innerHTML = `<main class="lobby">
+    <div class="dice">${die(5)}${die(6)}</div>
+    <h1>MAGNATE</h1>
+    <p class="small">Compra barrios, cobra renta y deja a tus amigos en bancarrota.</p>
+    <div class="step">${screens[step]}</div>
+    <p id="msg" role="alert">${esc(msg)}</p>
+  </main>`;
+  document.getElementById(step === 'join' && !code ? 'code' : 'name')?.focus();
+}
+
+function renderWaiting() {
+  const isHost = state.players[0].id === me.id, link = `${location.origin}${location.pathname}?sala=${state.code}`, mine = player(me.id).char;
+  const chars = Game.CHARACTERS.map((c, k) => {
+    const owner = state.players.find(p => p.char === k), taken = owner && owner.id !== me.id;
+    return `<button class="char${k === mine ? ' mine' : ''}" data-act="pick" data-i="${k}" style="--c:${c.color}" ${taken ? 'disabled' : ''}
+      aria-pressed="${k === mine}" aria-label="${c.name}${taken ? ', elegido por ' + esc(owner.name) : ''}">
+      <span class="char-icon">${icon(c.icon)}</span><b>${c.name}</b><small>${owner ? (taken ? esc(owner.name) : 'Tú') : 'Libre'}</small>
+    </button>`;
+  }).join('');
+  $app.innerHTML = `<main class="lobby wide">
+    <h1>MAGNATE</h1>
+    <div><p class="small">Pasa este código a tus amigos</p><div class="code">${state.code}</div>
+      <p class="small">o este enlace: <a href="${link}">${link}</a></p></div>
+    <section class="panel"><h2>${icon('Sparkles')}Elige tu personaje</h2><div class="chars">${chars}</div></section>
+    <section class="panel"><h2>${icon('Users')}Jugadores (${state.players.length}/6)</h2><ul class="players">${playerList()}</ul></section>
+    ${isHost
+      ? `<button class="btn" data-act="start" ${state.players.length < 2 ? 'disabled' : ''}>${icon('Dices')}Iniciar partida</button>`
+      : '<p>Esperando a que el anfitrión inicie la partida…</p>'}
+    <p id="msg" role="alert">${esc(msg)}</p>
+    <button class="btn alt" data-act="leave">${icon('LogOut')}Salir</button>
+  </main>`;
+}
+
+function playerList() {
+  const cur = state.started && state.players[state.turn];
+  return state.players.map((p, k) => `<li data-pid="${p.id}" class="${p === cur ? 'cur' : ''} ${p.out ? 'out' : ''}">
+    ${avatar(p)}${esc(p.name)}${p.id === me.id ? ' (tú)' : ''}
+    ${k === 0 && !state.started ? '<small class="host">anfitrión</small>' : ''}${p.jailed ? icon('Lock') : ''}${p.out ? icon('Skull') : ''}
+    ${state.started ? `<b>$${p.money}</b>` : ''}</li>`).join('');
+}
+
+function cellHtml(sp, i, myTurn) {
+  const s = state, [r, c] = cellPos(i), o = s.owned[i], owner = o && player(o.owner);
+  const cls = ['cell', 't-' + sp.type, i % 10 ? 's-' + SIDES[Math.floor(i / 10)] : 'corner', owner && 'owned', o?.mortgaged && 'mort',
+    sel === i && 'sel', myTurn && s.buyable === i && 'buyable'].filter(Boolean).join(' ');
+  const style = `grid-area:${r}/${c};${owner ? `--own:${owner.color};` : ''}${sp.group ? `--g:${Game.COLORS[sp.group]};` : ''}${myTurn && s.buyable === i && wait ? `animation-delay:${wait}ms;` : ''}`;
+  let inner;
+  if (i % 10 === 0) {
+    inner = `<span class="info">${icon(sp.icon)}<b class="nm">${esc(sp.name)}</b><small>${CORNER_SUB[sp.type]}</small>${sp.type === 'start' ? icon('ArrowLeft', 'arrow') : ''}</span>`;
+  } else if (sp.group) {
+    const houses = o?.houses === 5 ? icon('Hotel', 'ht') : icon('House').repeat(o?.houses || 0);
+    inner = `<span class="band">${houses}</span><span class="info"><span class="nm">${esc(sp.name)}</span><span class="pr">$${sp.price}</span></span>`;
+  } else {
+    inner = `<span class="info"><span class="nm">${esc(sp.name)}</span>${icon(sp.icon)}<span class="pr">${sp.price ? '$' + sp.price : sp.amount ? 'Paga $' + sp.amount : ''}</span></span>`;
+  }
+  return `<button class="${cls}" data-cell="${i}" title="${esc(sp.name)}" aria-label="${esc(sp.name)}" style="${style}">${inner}</button>`;
+}
+
+function renderGame() {
+  const s = state, cur = s.players[s.turn], meP = player(me.id), myTurn = cur.id === me.id && !s.winner;
+  if (!document.getElementById('layer')) {
+    $app.innerHTML = `<div class="game"><aside class="col left" id="left"></aside>
+      <div class="board"><div id="cells"></div><div id="layer"></div></div>
+      <aside class="col right" id="right"></aside><div class="hand" id="hand"></div></div>`;
+  }
+
+  let actions;
+  if (s.winner) actions = `<div class="trophy">${icon('Trophy')}</div><p><b>¡${esc(player(s.winner).name)} gana la partida!</b></p>`;
+  else if (!myTurn) actions = `<p>${avatar(cur)} Turno de <b>${esc(cur.name)}</b>${s.dues?.[0] ? ` · está pagando $${s.dues[0].amount}` : ''}</p>`;
+  else if (s.dues?.[0]) {
+    const d = s.dues[0];
+    actions = `<p>${icon('HandCoins')} Debes pagar <b>$${d.amount}</b> ${d.to ? 'a ' + esc(player(d.to).name) : 'al banco'} (${esc(d.why)}).<br>Entrega los billetes desde tu cartera.</p>`
+      + (meP.money < d.amount ? `<button class="btn alt" data-act="end">${icon('Skull')}Declararme en bancarrota</button>` : '');
+  } else {
+    const buy = s.buyable === meP.pos && Game.BOARD[meP.pos];
+    actions = [
+      s.canRoll && `<button class="btn" data-act="roll">${icon('Dices')}${meP.jailed ? 'Tirar (buscas dobles)' : 'Tirar dados'}</button>`,
+      s.canRoll && meP.jailed && `<button class="btn alt" data-act="bail">${icon('HandCoins')}Pagar fianza $${Game.BAIL}</button>`,
+      buy && `<button class="btn" data-act="buy">${icon('ShoppingCart')}Comprar ${esc(buy.name)} por $${buy.price}</button>`,
+      (!s.canRoll || meP.money < 0) && `<button class="btn alt" data-act="end">${meP.money < 0 ? icon('Skull') + 'Declararme en bancarrota' : icon('ArrowRight') + 'Terminar turno'}</button>`,
+    ].filter(Boolean).join('');
+    if (meP.money < 0) actions += `<p>Debes $${-meP.money}: vende casas o hipoteca (toca tus propiedades).</p>`;
+  }
+  const later = wait ? ` later" style="animation-delay:${wait}ms` : '';
+  const fresh = sel !== dealt; // la carta se "reparte" con animación solo al cambiar de casilla
+  dealt = sel;
+
+  document.getElementById('cells').innerHTML = Game.BOARD.map((sp, i) => cellHtml(sp, i, myTurn)).join('') + `
+    <div class="center">
+      <div class="deco deck">${icon('Gift')}SORPRESA</div>
+      <div class="deco bank">${icon('Landmark')}BANCO</div>
+      <div class="logo">MAGNATE</div>
+      <div class="tagline">Compra · Construye · Cobra</div>
+      <div class="dice" aria-label="Dados: ${s.dice.join(' y ')}">${die(s.dice[0], 0)}${die(s.dice[1], 1)}</div>
+      <div class="actions${later}">${actions}</div>
+      <p id="msg" role="alert">${esc(msg)}</p>
+      <ul class="log${later}">${s.log.slice(0, 4).map(l => `<li>${esc(l)}</li>`).join('')}</ul>
+    </div>`;
+  document.getElementById('left').innerHTML = `
+    <section class="panel detail${sel === null ? '' : ' open'}${fresh ? ' fresh' : ''}">${sel === null
+      ? `<div class="placeholder">${icon('MousePointerClick')}<p>Toca una casilla del tablero o una de tus propiedades para ver su escritura.</p></div>`
+      : deed(sel, myTurn, fresh)}</section>
+    <section class="panel"><h2>Historial</h2><ul class="log">${s.log.map(l => `<li>${esc(l)}</li>`).join('')}</ul></section>`;
+  document.getElementById('right').innerHTML = `
+    <section class="panel"><h2>${icon('Users')}Sala ${s.code}</h2><ul class="players">${playerList()}</ul></section>
+    ${walletPanel()}
+    <button class="btn alt" data-act="leave">${icon('LogOut')}Salir de la sala</button>`;
+  document.getElementById('hand').innerHTML = handHtml();
+}
+
+// Mis propiedades como cartas en la mano: asoma solo el encabezado y suben al pasar el mouse.
+function handHtml() {
+  const mine = Game.BOARD.flatMap((sp, i) => state.owned[i]?.owner === me.id ? [i] : []);
+  const old = prevHand;
+  prevHand = mine;
+  if (!mine.length) return `<p class="hand-empty">${icon('Layers')}Tus propiedades aparecerán aquí</p>`;
+  const n = mine.length, w = innerWidth <= 760 ? 96 : 120, tilt = Math.min(4, 30 / n);
+  const m = Math.min(-w * .14, (Math.min(innerWidth - 24, 900) / n - w) / 2); // cuanto más cartas, más encimadas
+  return mine.map((i, k) => {
+    const sp = Game.BOARD[i], o = state.owned[i], off = k - (n - 1) / 2;
+    const kin = Game.BOARD.flatMap((x, j) => (sp.group ? x.group === sp.group : x.type === sp.type) ? [j] : []);
+    const have = kin.filter(j => state.owned[j]?.owner === me.id).length;
+    const rent = o.mortgaged ? 'Sin renta' : sp.type === 'util' ? `${have === 2 ? 10 : 4} × dados` : '$' + Game.rent(state, i);
+    const head = sp.group
+      ? `<header style="background:${Game.COLORS[sp.group]};color:${inkOn(Game.COLORS[sp.group])}">${esc(sp.name)}</header>`
+      : `<header class="plain t-${sp.type}">${icon(sp.icon)}<span>${esc(sp.name)}</span></header>`;
+    return `<button class="hand-card${o.mortgaged ? ' mortgaged' : ''}${sel === i ? ' sel' : ''}${old && !old.includes(i) ? ' new' : ''}" data-cell="${i}"
+      aria-label="${esc(sp.name)}" style="--m:${m}px;--rot:${off * tilt}deg;--drop:${Math.abs(off) * tilt}px;--delay:${wait}ms">
+      ${head}
+      <div class="body">
+        <span>Renta: <b>${rent}</b></span>
+        <span>${sp.group ? 'Grupo' : sp.type === 'transport' ? 'Transportes' : 'Servicios'}: <b>${have}/${kin.length}</b>${have === kin.length ? ' <b class="full">¡Completo!</b>' : ''}</span>
+        <span class="houses-row">${o.houses === 5 ? icon('Hotel') : icon('House').repeat(o.houses)}</span>
+      </div>
+      <span class="price">$${sp.price}</span>
+    </button>`;
+  }).join('');
+}
+
+const bill = (d, k) => `<span class="bill" style="--bc:${BILL_COLORS[d]};--i:${k}"><b>${d}</b><i>M</i><b>${d}</b></span>`;
+const fmtBills = w => Wallet.DENOMS.filter(d => w[d]).map(d => `${w[d]}×$${d}`).join(' + ');
+
+// Pago en curso: una deuda que marcan las reglas o una compra que empecé yo (se envía al terminar de entregar los billetes).
+function payment() {
+  if (state.players[state.turn].id !== me.id || state.winner) return pending = null;
+  const d = state.dues?.[0];
+  if (d) return { key: 'due' + state.dues.length + JSON.stringify(d), act: 'pay', amount: d.amount, to: d.to, why: d.why, forced: true };
+  return pending;
+}
+
+function addToTray(d) {
+  const pay = payment(), w = myWallet();
+  if (!pay || (tray[d] || 0) >= (w[d] || 0)) return;
+  if (Wallet.total(tray) >= pay.amount) return showMsg('Ya entregaste suficiente: presiona Pagar');
+  tray[d] = (tray[d] || 0) + 1;
+  render();
+}
+
+async function submitPayment() {
+  const pay = payment(), given = { ...tray }, w0 = myWallet(); // copia: el nuevo estado puede llegar y redibujar antes
+  if (!pay || Wallet.total(given) < pay.amount) return;
+  const j = await api({ type: pay.act, i: pay.i });
+  if (j.error) return;
+  saveWallet(Wallet.payWith(w0, given, pay.amount)); // salen los billetes entregados y entra el cambio
+  tray = {};
+  pending = null;
+  render();
+}
+
+function walletPanel() {
+  if (!window.Wallet) return '<section class="panel wallet"><p>No cargó la cartera: recarga la página (F5).</p></section>'; // no tumbar el panel entero
+  const money = player(me.id).money, w = myWallet(), pay = payment();
+  if ((pay?.key ?? '') !== trayKey) { tray = {}; trayKey = pay?.key ?? ''; } // cambió lo que hay que pagar: billetes de vuelta a la cartera
+  for (const d of Wallet.DENOMS) tray[d] = Math.min(tray[d] || 0, w[d] || 0);
+  const given = Wallet.total(tray);
+
+  const tiles = Wallet.DENOMS.map(d => {
+    const n = (w[d] || 0) - tray[d], changed = prevW && (prevW[d] || 0) !== (w[d] || 0);
+    return `<button class="tile${picked === d && !pay ? ' picked' : ''}${changed ? ' pop' : ''}" data-tile="${d}" style="--delay:${wait}ms" ${n ? '' : 'disabled'}
+      aria-label="${n} billete${n === 1 ? '' : 's'} de $${d}${pay ? ': toca para entregarlo' : ': toca para cambiarlo'}">
+      <span class="stack">${[...Array(Math.max(1, Math.min(n, 4)))].map((_, k) => bill(d, k)).join('')}</span><span class="count">×${n}</span>
+    </button>`;
+  }).join('');
+  prevW = w;
+
+  let extra;
+  if (pay) {
+    const to = pay.to && player(pay.to);
+    const bills = Wallet.DENOMS.filter(d => tray[d]).map(d =>
+      `<button class="tray-bill" data-untray="${d}" aria-label="Devolver un billete de $${d}">${bill(d, 0)}×${tray[d]}</button>`).join('');
+    extra = `<div class="tray">
+      <div class="tray-head">${icon('HandCoins')}<div><b>Pagar $${pay.amount}</b><small>${to ? 'a ' + esc(to.name) : 'al banco'} · ${esc(pay.why)}</small></div></div>
+      <div class="tray-zone${given >= pay.amount ? ' ok' : ''}">${bills || (money < pay.amount
+        ? 'No te alcanza: vende casas o hipoteca tus propiedades'
+        : 'Arrastra billetes aquí o tócalos en tu cartera')}</div>
+      <div class="tray-sum">Entregado <b>$${given}</b> de $${pay.amount}${given > pay.amount ? ` · te devuelven <b>$${given - pay.amount}</b>` : ''}</div>
+      <div class="tray-actions">
+        <button class="btn" data-pay="go" ${given >= pay.amount ? '' : 'disabled'}>${icon('Check')}Pagar</button>
+        ${pay.forced ? '' : `<button class="btn alt" data-pay="cancel">${icon('X')}Cancelar</button>`}
+      </div>
+    </div>`;
+  } else if (picked) {
+    const d = picked, up = Wallet.upTarget(w, d), next = [...Wallet.DENOMS].reverse().find(h => h > d && h % d === 0);
+    extra = `<div class="ex-bar">
+      <button class="btn ex-btn" data-ex="down" data-d="${d}" ${d > 1 && w[d] ? '' : 'disabled'}>${icon('ChevronsDown')}
+        <span>Cambiar 1×$${d}<small>${d > 1 ? 'por ' + fmtBills(Wallet.breakdown(d, d)) : 'El de $1 no se puede cambiar'}</small></span></button>
+      <button class="btn ex-btn" data-ex="up" data-d="${d}" ${up ? '' : 'disabled'}>${icon('ChevronsUp')}
+        <span>${up ? `Juntar ${up / d}×$${d}<small>en 1×$${up}</small>` : `Juntar<small>${next ? `Necesitas ${next / d} de $${d} para uno de $${next}` : 'No hay billete más grande'}</small>`}</span></button>
+    </div>`;
+  } else extra = `<p class="ex-hint">${icon('MousePointerClick')}Toca un billete para cambiarlo o juntarlo.</p>`;
+
+  return `<section class="panel wallet${pay ? ' paying' : ''}"><h2>${icon('Wallet')}Mi cartera <b>$${money}</b></h2>${money < 0
+    ? `<p>Sin billetes: debes $${-money}.</p>`
+    : `${pay ? extra : ''}<div class="tiles">${tiles}</div>${pay ? '' : extra}
+       ${pay ? '' : `<button class="btn alt ex-btn" data-ex="tidy">${icon('Layers')}<span>Juntar todo<small>Deja la menor cantidad de billetes</small></span></button>`}`}</section>`;
+}
+
+// Tarjeta de la casilla, con la renta que aplica ahora resaltada.
+function deed(i, myTurn, fresh) {
+  const sp = Game.BOARD[i], o = state.owned[i], owner = o && player(o.owner), active = o && !o.mortgaged; // hipotecada no cobra
+  const row = (label, value, now) => `<li${now ? ' class="now"' : ''}><span>${label}</span><i class="lead"></i><b>${value}</b></li>`;
+  let head, body = '';
+  if (sp.group) {
+    const g = Game.COLORS[sp.group], base = sp.price / 10, cost = Game.houseCost(i);
+    const lvl = !active ? -1 : o.houses ? o.houses + 1 : Game.ownsGroup(state, o.owner, i) ? 1 : 0;
+    head = `<header style="background:${g};color:${inkOn(g)}"><small>Escritura</small><h3>${esc(sp.name)}</h3></header>`;
+    body = `<ul class="rents">
+        ${row('Renta', '$' + base, lvl === 0)}
+        ${row('Con todo el grupo', '$' + base * 2, lvl === 1)}
+        ${Game.HOUSE_MULT.slice(1, 5).map((m, k) => row('Con ' + icon('House').repeat(k + 1), '$' + base * m, lvl === k + 2)).join('')}
+        ${row(`Con <span class="ht">${icon('Hotel')}</span> hotel`, '$' + base * Game.HOUSE_MULT[5], lvl === 6)}
+      </ul>
+      <dl><dt>Cada casa</dt><dd>$${cost}</dd><dt>Hotel</dt><dd>4 casas + $${cost}</dd><dt>Valor de hipoteca</dt><dd>$${sp.price / 2}</dd></dl>`;
+  } else if (sp.type === 'transport' || sp.type === 'util') {
+    const n = active ? Game.BOARD.filter((x, j) => x.type === sp.type && state.owned[j]?.owner === o.owner).length : 0;
+    head = `<header class="plain t-${sp.type}">${icon(sp.icon)}<small>${sp.type === 'transport' ? 'Transporte' : 'Servicio'}</small><h3>${esc(sp.name)}</h3></header>`;
+    body = `<ul class="rents">${sp.type === 'transport'
+        ? [1, 2, 3, 4].map(k => row(`Con ${k} transporte${k > 1 ? 's' : ''}`, '$' + 25 * 2 ** (k - 1), n === k)).join('')
+        : row('Con 1 servicio', '4 × dados', n === 1) + row('Con los 2 servicios', '10 × dados', n === 2)}</ul>
+      <dl><dt>Valor de hipoteca</dt><dd>$${sp.price / 2}</dd></dl>`;
+  } else {
+    head = `<header class="plain t-${sp.type}">${icon(sp.icon)}<h3>${esc(sp.name)}</h3></header>`;
+    body = `<p class="desc">${sp.type === 'tax' ? `Pagas $${sp.amount} al banco.` : sp.desc}</p>`;
+  }
+  const here = state.players.filter(p => !p.out && p.pos === i);
+  const foot = [
+    sp.price && (owner ? `<span class="chip">${avatar(owner)}Dueño: <b>${esc(owner.name)}</b></span>`
+      : `<span class="chip free">Disponible · <b>$${sp.price}</b></span>`),
+    here.length && `<span class="chip">${icon('MapPin')}Aquí: ${here.map(avatar).join('')}</span>`,
+  ].filter(Boolean).join('');
+
+  let html = `<article class="deed${o?.mortgaged ? ' mortgaged' : ''}${fresh ? ' deal' : ''}">
+    <button class="x" data-act="close" aria-label="Cerrar">${icon('X')}</button>${head}${body}<footer>${foot}</footer></article>`;
+  if (owner?.id === me.id && myTurn) {
+    html += '<div class="actions">' + [
+      sp.type === 'prop' && o.houses < 5 && `<button class="btn" data-act="build">${icon('Hammer')}Construir ($${Game.houseCost(i)})</button>`,
+      o.houses > 0 && `<button class="btn alt" data-act="sell">${icon('HandCoins')}Vender casa (+$${Game.houseCost(i) / 2})</button>`,
+      !o.mortgaged && `<button class="btn alt" data-act="mortgage">${icon('Landmark')}Hipotecar (+$${sp.price / 2})</button>`,
+      o.mortgaged && `<button class="btn" data-act="unmortgage">${icon('Landmark')}Levantar hipoteca ($${Math.ceil(sp.price * 0.55)})</button>`,
+    ].filter(Boolean).join('') + '</div>';
+  }
+  return html;
+}
+
+let savedTheme = null;
+try { savedTheme = localStorage.getItem('magnate-theme'); } catch {}
+setTheme(savedTheme);
+if (me) Net.resume(me).then(ok => { if (!ok) { leave(); showMsg('La sala ya no existe'); } });
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "magnate",
+  "private": true,
+  "description": "Juego de mesa de propiedades para jugar online con amigos",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
